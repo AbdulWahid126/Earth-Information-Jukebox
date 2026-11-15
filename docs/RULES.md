@@ -99,19 +99,21 @@ Every component file must follow a consistent internal order:
 ## 7. Performance & Memory Management Rules
 
 ### OpenCV.js Memory Rules (Critical)
-- **Deterministic Cleanup:** Every `cv.Mat` instantiated must be explicitly disposed of via `.delete()`. Failure to do so will cause catastrophic memory leaks in the WebAssembly heap.
+- **Browser-Only Execution:** OpenCV.js must never be executed on the server or in Server Components. Always guard with `typeof window !== 'undefined'` or encapsulate inside `'use client'` hooks and callbacks.
+- **Strict Typing:** Never use `any` for OpenCV structures. Use typed interfaces (`OpenCVRuntime`, `CVMat`, `CVRect`, `CVScalar`) from `src/lib/cv/cvTypes.ts`.
+- **Deterministic Cleanup:** Every `cv.Mat` instantiated (including ROI slices inside loops) must be explicitly disposed of via `.delete()`. Failure to do so will cause catastrophic memory leaks in the WebAssembly heap.
 - **Scoping Pattern:**
   ```typescript
-  let srcMat: any = null;
-  let grayMat: any = null;
+  let srcMat: CVMat | null = null;
+  let grayMat: CVMat | null = null;
   try {
     srcMat = cv.imread(canvasElement);
     grayMat = new cv.Mat();
     cv.cvtColor(srcMat, grayMat, cv.COLOR_RGBA2GRAY);
     // Execute feature extraction...
   } finally {
-    if (srcMat) srcMat.delete();
-    if (grayMat) grayMat.delete();
+    srcMat?.delete();
+    grayMat?.delete();
   }
   ```
 - **Controlled Processing Resolution:** Never feed multi-megapixel images directly into the computer vision pipeline. Downscale to a standardized processing buffer ($512\text{px}$ maximum dimension) before running analysis.
@@ -119,6 +121,10 @@ Every component file must follow a consistent internal order:
 ### Audio Performance Rules
 - **No Direct Audio Allocation in Render Loops:** Pre-allocate Tone.js synthesizer instances during initialization. Never instantiate new `Tone.Synth()` instances inside playback ticks.
 - **Audio Clamping:** Always route through a master `Tone.Limiter` to eliminate digital clipping and protect user hearing.
+- **Explicit User Gesture Unlock:** Tone.js `AudioContext` and `Tone.start()` must only be triggered in response to an explicit user interaction (click, tap, Spacebar keypress). Never attempt autoplay on page mount.
+- **Tone.Draw Callback Guarding:** UI state synchronizers scheduled through `Tone.Draw.schedule()` must verify that transport status is still `'playing'` before updating React state. On playback stop or reset, immediately execute `Tone.Draw.cancel(0)` to prevent queued microtasks from reviving discarded playback frames.
+- **Deterministic Transport Reset:** When stopping playback, clear the repeating schedule ID from `Tone.Transport`, call `Tone.Transport.stop()`, reset `Tone.Transport.position = 0`, and release all active synth voices.
+- **Equitable Non-Auditory Access:** Every sonified visualization must provide a structured, non-audio tabular summary of empirical features (luminance range, edge complexity, sector extrema) ensuring deaf and hard-of-hearing users have full access to scientific insights.
 
 ---
 

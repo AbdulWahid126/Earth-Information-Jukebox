@@ -130,6 +130,18 @@ flowchart LR
    - **Roughness / Variance:** Standard deviation of pixel values within the cell.
 4. **WASM Heap Garbage Collection:** JavaScript garbage collection does not clean up OpenCV.js C++ objects. Every allocated `cv.Mat`, `cv.Rect`, or `cv.Scalar` must be explicitly freed in a `try...finally` block via `.delete()`.
 
+### Implemented Phase 4 CV Module Architecture:
+- `frontend/src/types/cv.ts`: Strongly typed data contracts for color coordinates (`ColorRGB`, `ColorHSV`), grid coordinates (`SectorCoordinates`), regional metrics (`RegionalVisualFeatures`), grid configuration (`GridConfig`), and complete analysis results (`GridAnalysisResult`).
+- `frontend/src/lib/cv/cvTypes.ts`: Strict TypeScript definitions for the OpenCV.js WASM runtime API (`CVMat`, `CVRect`, `CVSize`, `CVScalar`, `OpenCVRuntime`).
+- `frontend/src/lib/cv/opencvLoader.ts`: Singleton lazy loader with dynamic script injection (`/assets/opencv/opencv.js`). Resolves two critical bundler runtime pitfalls:
+  1. *AMD Loader Conflict:* Patched `opencv.js` line 2 to disable `define.amd` branching, forcing browser window global attachment (`window.cv`).
+  2. *Emscripten `.then` Trap:* Deletes `(window.cv as any).then` prior to resolving the promise to avoid ECMAScript promise recursion microtask infinite loops.
+- `frontend/src/lib/cv/imageLoader.ts`: Offscreen canvas downsampler scaling arbitrary NASA rasters to an exact max width of 512px ($512 \times 288$ for 16:9 HD) while avoiding canvas tainting on local relative assets.
+- `frontend/src/lib/cv/gridAnalyzer.ts`: High-performance sector extraction computing mean RGB, HSV, Rec. 601 luminance, standard deviation variance (`data64F` for `CV_64FC1`), Sobel gradient edge density, and background canvas margin classification (`isLikelyBackground`). Guarantees deterministic `.delete()` cleanup on all temporary matrices in `finally` blocks.
+- `frontend/src/hooks/useImageProcessor.ts`: React hook managing OpenCV initialization lifecycle, loading progress, canvas raster extraction, grid analysis execution, sector selection, and HUD visualizer state.
+- `frontend/src/components/explorer/GridOverlayVisualizer.tsx`: Interactive SVG/Canvas HUD overlay rendering Wireframe, Color, Luminance, and Edge Density heatmaps with interactive sector inspection reticles.
+- `frontend/src/components/explorer/ImageAnalysisPanel.tsx`: NASA mission-control analysis panel with configurable grid resolution (8×8, 16×16, 32×32), live telemetry stats, sector inspector, and scientific disclaimer notice.
+
 ---
 
 ## 5. Scientific Data Interpretation & Legend Mapping
@@ -138,10 +150,11 @@ flowchart LR
 
 ### Legend Mapping Architecture
 Each curated NASA visualization is paired with a verified **Visualization Metadata Schema** defining:
-1. **Colormap Specification:** The NASA legend type (e.g., Turbo, Viridis, Thermal, Blue-to-Red gradient).
-2. **Physical Metric Bounds:** The physical measurement and its verified unit range (e.g., Sea Surface Temperature in ${^\circ}\text{C}$ spanning $[-2.0, 35.0]$).
+1. **Colormap Specification:** The NASA legend type (e.g., Turbo, Viridis, Thermal, Blue-to-Red, or Crameri *vik*).
+2. **Physical Metric Bounds:** The physical measurement and its verified unit range (e.g., Temperature Anomaly in ${^\circ}\text{C}$ relative to the 1951–1980 baseline).
 3. **Calibration Lookup Table (LUT):** Mathematical reference points connecting RGB/HSV values to verified metric values.
 4. **Confidence & Approximation Flags:** Clear metadata attributes indicating whether a metric represents an exact physical reading, an interpolated value, or an uncalibrated optical proxy (e.g., cloud optical thickness visual proxy).
+5. **Modality Separation (Spatial vs. Time-Series):** Clear architectural separation between 2D spatial raster imagery (processed via OpenCV.js) and 1D scalar time-series tables (e.g., GISTEMP monthly means CSV). Time-series data must never be treated as spatial grid cells. Full specifications are maintained in `docs/NASA_DATA_SOURCES.md`.
 
 ---
 
@@ -204,6 +217,28 @@ flowchart TD
    - The playhead's horizontal position maps directly to the stereo field ($x = 0 \to -1.0$ [full left], $x = 1 \to +1.0$ [full right]), providing spatial acoustic orientation.
 5. **Peak Protection & Limiting (`Tone.Limiter`):**
    - A master limiter clamped at $-0.5\text{ dB}$ ensures that rapid parameter changes or overlapping voices never produce harsh clipping or digital distortion.
+
+### Implemented Phase 5 Sonification Module Architecture:
+- `frontend/src/types/sonification.ts`: Type system defining `PlaybackStatus`, `MusicalScaleId`, `MusicalScaleDefinition`, `TraversalMode`, `SonificationMappingConfig`, `SonificationEvent`, and `SonificationTelemetry`.
+- `frontend/src/lib/sonification/scales.ts`: Scale catalogs (Major Pentatonic, Minor Pentatonic, Dorian, Lydian, Aeolian/Natural Minor), note-to-frequency mathematical converters ($f = 440 \cdot 2^{(\text{midi}-69)/12}$), and monotonic scale degree quantizers.
+- `frontend/src/lib/sonification/parameterMapper.ts`: Deterministic mapper generating `SonificationEvent[]` timelines from `GridAnalysisResult`. Orders sectors via longitude sweeps (`column_sweep`), latitude scans (`raster`), or polar zigzags (`boustrophedon`); maps luminance to pitch, variance to lowpass filter cutoff ($500\text{ Hz} - 3500\text{ Hz}$), horizontal position to stereo panning ($-0.85$ to $+0.85$), and flags white canvas margins as rests.
+- `frontend/src/lib/sonification/toneEngine.ts`: Client-side audio rack managing Web Audio lifecycle, user gesture unlock (`Tone.start()`), signal routing (`leadSynth`, `droneSynth`, `noiseSynth` $\to$ `filter` $\to$ `panner` $\to$ `reverb` $\to$ `volume` $\to$ `limiter` $\to$ destination), step-sequenced `Tone.Transport.scheduleRepeat`, and sample-accurate UI synchronizer (`Tone.Draw.schedule`). Ensures clean disposal and cancelation of transport schedules on stop/unmount.
+- `frontend/src/hooks/useSonificationEngine.ts`: React hook coordinating playback state, mapping parameters, keyboard shortcuts (Space for Play/Pause, S for Stop, M for Mute), and throttled screen-reader announcements (`aria-live="polite"`).
+- `frontend/src/components/sonification/SonificationControlBar.tsx`: Mission-control playback station with transport buttons, active pitch telemetry meter, progress bar, scale/speed/mode dropdowns, volume slider, and voice toggles.
+- `frontend/src/components/sonification/SonificationMappingExplainer.tsx`: Transparent scientific guide detailing the transformation of visual features into musical parameters.
+- `frontend/src/components/sonification/NonAudioFeatureSummary.tsx`: Accessible empirical digest highlighting data coverage, luminance ranges, thermal front complexity, and geographic sector extrema for users who are deaf or hard-of-hearing.
+- `frontend/src/components/studio/StudioWorkstation.tsx`: Professional DAW and mission-control laboratory console hosting planetary dataset switching and real-time sonification controls.
+
+### Implemented Phase 6 Time-Series Module Architecture:
+- `frontend/src/types/timeSeries.ts`: Data definitions for `MonthlyAnomalyRecord`, `AnnualAnomalyRecord`, `GistempParsedData`, `GistempDatasetSummary`, `TimeSeriesSonificationEvent`, and `TimeSeriesSonificationConfig`.
+- `frontend/src/lib/data/gistempCsvParser.ts`: Resilient client-side CSV parser processing NASA GISS Land-Ocean Temperature Index (`GLB.Ts+dSST.csv`, 1880–2026). Strictly enforces `***` as `null` missing data (never zero), validates 147 years of records, and generates filtered annual and monthly timelines.
+- `frontend/src/lib/sonification/timeSeriesMapper.ts`: Empirical mathematical mapper translating Celsius anomalies into musical parameters. Anchors the 1951–1980 baseline ($0.00^\circ\text{C}$) at C4 ($261.6\text{ Hz}$), maps negative anomalies to lower octaves (C2–A3) with warm lowpass filtering ($500\text{ Hz}$), and maps positive anomalies to upper registers (C4–C6) with bright harmonic opening ($3600\text{ Hz}$).
+- `frontend/src/lib/sonification/timeSeriesAudioEngine.ts`: Dedicated Web Audio engine with `Tone.PolySynth` lead, `Tone.AMSynth` baseline drone anchor (C2), dynamic low-pass filter, reverb, master limiter, and sample-accurate `Tone.Draw` frame synchronization.
+- `frontend/src/hooks/useTimeSeriesSonification.ts`: React hook managing asynchronous CSV loading, timeline event synthesis, playback state (Play/Pause/Resume/Stop/Seek), timeline granularity toggles, and throttled live screen-reader announcements.
+- `frontend/src/components/timeseries/TimeSeriesChart.tsx`: High-performance, zero-dependency SVG visualization rendering 1880–2026 temperature anomalies with zero baseline, colored anomaly bars (blue cold / amber-red warm), hover crosshair probe, and live playback playhead.
+- `frontend/src/components/timeseries/TimeSeriesSonificationPanel.tsx`: Full mission-control console integrating the SVG chart, dual granularity toggles (Annual vs Monthly), audio transport faders, and keyboard shortcuts.
+- `frontend/src/components/timeseries/TimeSeriesExplainer.tsx`: Transparent scientific guide detailing the physical meaning of anomalies, the 1951–1980 baseline, and pitch mapping rules.
+- `frontend/src/components/timeseries/TimeSeriesDataSummary.tsx`: Accessible non-auditory empirical digest highlighting all-time warmth (+1.28 °C in 2024), all-time cold (-0.49 °C in 1909), and decadal warming trends.
 
 ---
 

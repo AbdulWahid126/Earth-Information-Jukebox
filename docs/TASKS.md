@@ -38,17 +38,17 @@ This task tracker outlines the step-by-step implementation plan for the solo dev
 
 ## PHASE 2: UI/UX Foundation
 
-- [ ] **Application layout**
-  - [ ] Implement responsive root layout with tactical mission header and status bar.
+- [x] **Application layout**
+  - [x] Implement responsive root layout with tactical mission header and status bar.
   - [ ] Add breadcrumbs, system latency indicators, and master mute toggle to the header.
-  - [ ] Implement footer with attribution to NASA Earth Observatory and project metadata.
-- [ ] **Navigation**
-  - [ ] Build global navigation component connecting Home, Earth Explorer, and Workspace.
-  - [ ] Add active route indicator with high-contrast mission-control styling.
-- [ ] **Homepage**
-  - [ ] Design high-impact hero section introducing Earth Information Jukebox.
-  - [ ] Display mission statement: transforming satellite imagery into musical soundscapes.
-  - [ ] Add interactive "Launch Observatory" CTA linking to the Earth Explorer.
+  - [x] Implement footer with attribution to NASA Earth Observatory and project metadata.
+- [x] **Navigation**
+  - [x] Build global navigation component connecting Home, Earth Explorer, and Workspace.
+  - [x] Add active route indicator with high-contrast mission-control styling.
+- [x] **Homepage**
+  - [x] Design high-impact hero section introducing Earth Information Jukebox.
+  - [x] Display mission statement: transforming satellite imagery into musical soundscapes.
+  - [x] Add interactive "Launch Observatory" CTA linking to the Earth Explorer.
 - [ ] **Earth Explorer**
   - [ ] Build responsive catalog grid (`CatalogGrid`) displaying dataset cards.
   - [ ] Implement category filter pills (Atmosphere, Biosphere, Cryosphere, Hydrosphere).
@@ -67,101 +67,116 @@ This task tracker outlines the step-by-step implementation plan for the solo dev
 
 ## PHASE 3: NASA Integration
 
-- [ ] **Research available NASA visualizations**
-  - [ ] Research verified imagery from NASA Earth Observatory, NASA Worldview, and Visible Earth.
-  - [ ] Document colormap calibration standards for Sea Surface Temperature (SST), NDVI, and Sea Ice.
-- [ ] **Select initial visualization**
-  - [ ] Select initial set of 4 curated datasets:
-    1. Global Sea Surface Temperature (MODIS Aqua/Terra)
-    2. Global Biosphere Normalized Difference Vegetation Index / NDVI (MODIS)
-    3. Arctic Sea Ice Minimum Extent (AMSR2 / Nimbus-7)
-    4. Global Thermal Anomalies & Wildfires (FIRMS VIIRS)
-- [ ] **Establish source attribution**
-  - [ ] Draft accurate scientific descriptions and mission citations for each selected dataset.
-  - [ ] Link directly to NASA source repositories and documentation pages.
-- [ ] **Load visualization assets**
-  - [ ] Optimize and package high-resolution WebP/PNG images into `public/assets/visualizations/`.
-  - [ ] Generate responsive thumbnails for the Explorer catalog.
-- [ ] **Define scientific data and legend metadata**
-  - [ ] Create static TypeScript metadata registry (`src/lib/nasa/datasets.ts`).
-  - [ ] Define physical metric ranges, measurement units (°C, NDVI ratio $[-0.1, 0.9]$, Ice Concentration %), and calibration lookup flags.
-  - [ ] Clearly flag whether values represent direct physical readings or visual approximations.
+- [x] **Research available NASA visualizations**
+  - [x] Research verified imagery from NASA Earth Observatory, NASA Worldview, and NASA SVS.
+  - [x] Document colormap calibration standards for NASA GISTEMP v4 (*vik* colormap, Crameri 2018).
+- [x] **Select initial visualization**
+  - [x] Select initial active dataset: NASA GISTEMP v4 — Global Temperature Anomalies (SVS 5603 / GISS).
+  - [x] Define companion roadmap datasets (Sea Level & Polar Ice Dynamics, Perpetual Ocean Currents).
+- [x] **Establish source attribution**
+  - [x] Draft accurate scientific descriptions and mission citations for GISTEMP v4 (Lenssen et al. 2024, Hansen et al. 2010).
+  - [x] Link directly to NASA source repositories and SVS 5603 documentation pages.
+- [x] **Load visualization assets**
+  - [x] Download and package high-resolution 1080p PNG into `public/assets/visualizations/temperature/gistemp-2025-map-nosmoothing.png`.
+  - [x] Download and package global monthly time-series CSV into `public/assets/datasets/temperature/gistemp-global-monthly.csv`.
+  - [x] Document asset specifications in `docs/NASA_DATA_SOURCES.md`.
+- [x] **Define scientific data and legend metadata**
+  - [x] Create static TypeScript metadata registry (`src/lib/nasa/datasets.ts` and `src/types/dataset.ts`).
+  - [x] Define physical metric ranges, measurement units (°C anomaly), baseline (1951–1980), and projection (Robinson).
+  - [x] Strictly document and enforce distinction between 2D spatial raster maps and 1D global mean time series.
 
 ---
 
 ## PHASE 4: Computer Vision
 
-- [ ] **Integrate OpenCV.js**
-  - [ ] Set up lazy-loading mechanism (`useOpenCV.ts`) via dynamic script injection.
-  - [ ] Handle WASM loading progress, ready states, and network failure fallbacks.
-  - [ ] Ensure OpenCV.js binary is loaded only when entering the workspace.
-- [ ] **Load image into processing pipeline**
-  - [ ] Render selected visualization onto an off-screen HTML5 Canvas.
-  - [ ] Downscale buffer to a standardized max dimension (e.g., $512\text{px}$) for performant matrix processing.
-  - [ ] Convert image data into an OpenCV `cv.Mat` RGBA buffer with strict `.delete()` memory safety.
-- [ ] **Extract image regions**
-  - [ ] Implement spatial grid subdivision algorithm dividing the image into an $N \times M$ matrix (e.g., $16 \times 16$).
-  - [ ] Extract sub-region bounding boxes (`cv.Rect`) for localized feature extraction.
-- [ ] **Calculate regional brightness and color statistics**
-  - [ ] Compute mean luminance for each sector ($Y = 0.299R + 0.587G + 0.114B$).
-  - [ ] Convert sub-regions to HSV and calculate dominant hue, saturation, and value.
-  - [ ] Apply Sobel or Canny edge detection filter to quantify spatial gradient / edge density.
-  - [ ] Compute intensity standard deviation (texture roughness) per region.
-- [ ] **Implement smoothing and normalization**
-  - [ ] Normalize all extracted metrics into uniform $[0.0, 1.0]$ numerical ranges.
-  - [ ] Implement spatial 2D Gaussian or neighborhood box smoothing across adjacent cells.
-  - [ ] Implement temporal exponential moving average (EMA) to prevent audio stepping artifacts.
-- [ ] **Produce structured analysis output**
-  - [ ] Assemble metrics into the strongly-typed `GridAnalysisResult` data structure.
-  - [ ] Cache analysis results in memory to avoid redundant CV processing on identical images.
+- [x] **Integrate OpenCV.js**
+  - [x] Set up lazy-loading mechanism (`useOpenCV.ts`, `opencvLoader.ts`) via dynamic script injection.
+  - [x] Handle WASM loading progress, ready states, AMD loader resolution, and thenable infinite-loop mitigation.
+  - [x] Ensure OpenCV.js binary (4.8.0 WASM) is loaded only on user interaction within the Explore/Studio workspaces.
+- [x] **Load image into processing pipeline**
+  - [x] Render selected visualization onto an off-screen HTML5 Canvas buffer (`imageLoader.ts`).
+  - [x] Downscale buffer proportionally to a standardized max processing width ($512\text{px}$, producing $512 \times 288\text{px}$) to maintain sub-100ms processing.
+  - [x] Convert image data into an OpenCV `cv.Mat` RGBA buffer with strict `.delete()` deterministic deallocation in `finally` blocks.
+- [x] **Extract image regions**
+  - [x] Implement spatial grid subdivision algorithm dividing the image into configurable $N \times M$ sectors ($8 \times 8$, $16 \times 16$, $32 \times 32$).
+  - [x] Extract sub-region bounding boxes (`cv.Rect`) for localized feature extraction with zero-leak ROI matrices.
+- [x] **Calculate regional brightness and color statistics**
+  - [x] Compute mean luminance for each sector ($Y = 0.299R + 0.587G + 0.114B$).
+  - [x] Convert sub-regions to HSV and calculate mean hue ($0^\circ–360^\circ$), saturation ($0.0–1.0$), and value ($0.0–1.0$).
+  - [x] Apply Sobel spatial edge detection ($3\times3$ kernel, $X$ and $Y$ gradients blended) to quantify regional edge density.
+  - [x] Compute color intensity standard deviation / texture variance (`cv.meanStdDev` with `CV_64FC1` accessor).
+  - [x] Detect and flag non-data canvas margins outside the Robinson projection oval (`isLikelyBackground`).
+- [x] **Implement smoothing and normalization**
+  - [x] Normalize extracted metrics (luminance, HSV, edge density) into uniform numerical ranges ($[0.0, 1.0]$).
+  - [x] Calculate global aggregation statistics (mean global luminance, mean edge density, active planetary data sectors).
+  - [x] Note: Cross-cell 2D Gaussian smoothing and temporal EMA transitions scheduled for Phase 5 continuous playback loop.
+- [x] **Produce structured analysis output**
+  - [x] Assemble metrics into the strongly-typed `GridAnalysisResult` and `RegionalVisualFeatures` data structures (`types/cv.ts`).
+  - [x] Deliver interactive HUD overlay visualizer (`GridOverlayVisualizer.tsx`) with 4 inspection modes (Wireframe, Color, Luminance, Edge).
+  - [x] Provide interactive Sector Inspector displaying coordinates, RGB swatch, HSV, luminance, variance, and edge density.
 
 ---
 
 ## PHASE 5: Sonification
 
-- [ ] **Integrate Tone.js**
-  - [ ] Initialize Tone.js audio engine within a dedicated custom hook (`useSonificationEngine.ts`).
-  - [ ] Implement explicit user gesture trigger (`Tone.start()`) to comply with browser autoplay policies.
-  - [ ] Create master audio signal chain with `Tone.Filter`, `Tone.Panner`, `Tone.Reverb`, and `Tone.Limiter`.
-- [ ] **Define musical parameter mapping**
-  - [ ] Create mathematical scaling functions mapping $[0.0, 1.0]$ features to musical parameters.
-  - [ ] Establish scale note definitions (Pentatonic, Dorian, Lydian, Aeolian) in `src/lib/sonification/scales.ts`.
-- [ ] **Implement pitch mapping**
-  - [ ] Map regional luminance / physical metric to pitch frequencies quantized to the active scale.
-  - [ ] Assign base harmonic drone root frequencies to dataset-wide baseline metrics.
-- [ ] **Implement rhythm mapping**
-  - [ ] Map edge density and textural variance to note trigger density and arpeggiator clock subdivisions.
-  - [ ] Smooth rhythmic triggers so chaotic regions generate lively textures without auditory clutter.
-- [ ] **Implement volume mapping**
-  - [ ] Map feature prominence to voice velocity and volume envelopes.
-  - [ ] Configure gain stages to prevent distortion while keeping subtle nuances audible.
-- [ ] **Implement timbre selection**
-  - [ ] Configure `Tone.FMSynth` / `Tone.AMSynth` for organic, evolving timbres.
-  - [ ] Map color saturation to low-pass filter cutoff frequencies (opening cutoff on saturated zones).
-  - [ ] Route edge density into a bandpass-filtered `Tone.NoiseSynth` for atmospheric friction.
-- [ ] **Generate sound from processed data**
-  - [ ] Verify real-time generation of harmonic chords, basslines, and melodic leads from the input data.
+- [x] **Integrate Tone.js**
+  - [x] Initialize Tone.js audio engine within a dedicated custom hook (`useSonificationEngine.ts`) and modular engine class (`ToneSonificationEngine`).
+  - [x] Implement explicit user gesture trigger (`Tone.start()`) to comply with browser autoplay policies.
+  - [x] Create master audio signal chain with `Tone.Filter`, `Tone.Panner`, `Tone.Reverb`, `Tone.Volume`, and `Tone.Limiter`.
+- [x] **Define musical parameter mapping**
+  - [x] Create mathematical scaling functions mapping $[0.0, 1.0]$ features to musical parameters (`parameterMapper.ts`).
+  - [x] Establish scale note definitions (Major Pentatonic, Minor Pentatonic, Dorian, Lydian, Aeolian/Natural Minor) in `src/lib/sonification/scales.ts`.
+- [x] **Implement pitch mapping**
+  - [x] Map regional luminance to pitch frequencies strictly quantized to the active harmonic scale.
+  - [x] Assign base harmonic drone root frequencies (`Tone.AMSynth`) to dataset-wide planetary baseline.
+- [x] **Implement rhythm & traversal mapping**
+  - [x] Map horizontal longitude sweeps (`column_sweep`), latitude scans (`raster`), and zigzag polar sweeps (`boustrophedon`).
+  - [x] Implement 16th-note transport step sequencer with speed multipliers ($0.5\times, 1.0\times, 1.5\times, 2.0\times$).
+- [x] **Implement volume mapping**
+  - [x] Map feature intensity (HSV value & contrast) to voice velocity ($0.35$ to $0.85$ range).
+  - [x] Automatically silence and rest on non-data white background canvas margins (`isLikelyBackground: true`).
+- [x] **Implement timbre selection**
+  - [x] Configure `Tone.PolySynth` (melodic lead), `Tone.AMSynth` (planetary drone), and `Tone.NoiseSynth` (atmospheric friction).
+  - [x] Map color variance and saturation to low-pass filter cutoff frequencies ($500\text{ Hz}$ to $3500\text{ Hz}$).
+  - [x] Route Sobel edge density into a bandpass-filtered noise voice for atmospheric turbulence.
+- [x] **Generate sound from processed data**
+  - [x] Verify real-time generation of harmonic chords, planetary drone, and melodic leads from NASA GISTEMP 2025 analysis.
+  - [x] Implement full playback transport bar (`SonificationControlBar.tsx`) with Play, Pause, Resume, Stop, Mute, Volume, and Voice toggles.
+  - [x] Implement visual reticle synchronization via `Tone.Draw` on `GridOverlayVisualizer.tsx`.
+  - [x] Implement accessible live telemetry announcements (`aria-live="polite"`), `SonificationMappingExplainer.tsx`, and `NonAudioFeatureSummary.tsx`.
 
 ---
 
-## PHASE 6: Integration
+## PHASE 6: NASA GISTEMP Time-Series Sonification
 
-- [ ] **Synchronize visualization and audio**
-  - [ ] Bind `Tone.Transport` clock to the UI playhead position via `useScanTransport.ts`.
-  - [ ] Render scanning reticle and highlight box over the exact sector currently triggering audio.
-- [ ] **Implement playback controls**
-  - [ ] Wire up Master Play, Pause, and Reset controls.
-  - [ ] Implement manual scrub bar allowing users to jump directly to any column or sector.
-  - [ ] Implement keyboard shortcuts (Spacebar for Play/Pause, Arrow keys for step-scrub).
-- [ ] **Implement scanning modes**
-  - [ ] Implement Horizontal Sweep (left-to-right longitude scan).
-  - [ ] Implement Vertical Sweep (pole-to-equator-to-pole scan).
-  - [ ] Implement Interactive Probe Mode (hover/click on individual grid sectors).
-  - [ ] Implement Global Ambient Mode (concurrent polyphonic summary of whole image).
-- [ ] **Implement adjustable sound settings**
-  - [ ] Connect UI faders to individual voice gains (Master, Lead, Drone, Atmosphere).
-  - [ ] Implement tempo / scan-speed control ($60\text{ BPM}$ to $180\text{ BPM}$).
-  - [ ] Implement scale selector enabling real-time musical mode switching.
+- [x] **CSV Data Processing Engine**
+  - [x] Create dedicated client-side parser (`gistempCsvParser.ts`) safely handling descriptive lines and headers.
+  - [x] Parse Year, Jan–Dec (12 months), annual mean (`J-D`), meteorological mean (`D-N`), and seasonal averages.
+  - [x] Treat `***` strictly as missing data (`null`), never as zero. Exclude incomplete observations from playback.
+  - [x] Validate numeric values and coverage across 147 years (1880–2026).
+- [x] **Interactive Time-Series Visualization**
+  - [x] Create lightweight SVG time-series chart (`TimeSeriesChart.tsx`) with zero-baseline reference ($0.00^\circ\text{C}$).
+  - [x] Color-code anomaly bars: cool blue/cyan ($< 0^\circ\text{C}$), warm amber/crimson ($> 0^\circ\text{C}$).
+  - [x] Implement live cursor hover probe displaying Year, anomaly in ${^\circ}\text{C}$, and mapped musical pitch.
+  - [x] Synchronize interactive playhead line and pulsing reticle with live audio playback.
+  - [x] Support click-to-seek timeline navigation.
+- [x] **Scientific Sonification Mapping**
+  - [x] Create separate time-series parameter mapper (`timeSeriesMapper.ts`) mapping Celsius anomalies to musical pitch.
+  - [x] Anchor zero baseline ($0.0^\circ\text{C}$) to middle C (C4, $261.6\text{ Hz}$).
+  - [x] Negative anomalies ($-0.81^\circ\text{C}$ to $0^\circ\text{C}$) descend into deep bass registers (C2–A3) with warm, muted filtering.
+  - [x] Positive anomalies ($0^\circ\text{C}$ to $+1.48^\circ\text{C}$) ascend into higher octaves (C4–C6) with dynamic low-pass filter opening ($500\text{ Hz}$ to $3600\text{ Hz}$).
+- [x] **Web Audio Playback Engine**
+  - [x] Implement dedicated `TimeSeriesAudioEngine` with `Tone.PolySynth` lead and `Tone.AMSynth` baseline drone.
+  - [x] Implement Play, Pause, Resume, Stop, Speed multipliers ($0.5\times, 1.0\times, 1.5\times, 2.0\times$), and Volume control.
+  - [x] Support dual timeline granularities: Annual Means (146 records) vs Monthly Detailed (1,754 records).
+  - [x] Require explicit user gesture (`Tone.start()`) prior to playback; cleanly cancel schedules on stop.
+- [x] **Dual Modality Segregation**
+  - [x] Keep Spatial Visual Sonification (2D Map) and Scientific Time-Series Sonification (1D CSV) strictly separated.
+  - [x] Provide high-level modality switcher in Studio Workstation and Explorer Detail View.
+- [x] **Explainability & Accessibility**
+  - [x] Create `TimeSeriesExplainer.tsx` explaining temperature anomalies, 1951–1980 baseline, and pitch mapping.
+  - [x] Create `TimeSeriesDataSummary.tsx` providing empirical digest (record warmth, record cold, decadal warming shift) for deaf and hard-of-hearing users.
+  - [x] Include full keyboard accessibility (`Space`, `S`, `M`), ARIA labels, and `aria-live="polite"` live announcements.
 
 ---
 
