@@ -63,9 +63,9 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="mt-6 text-base sm:text-lg text-text-secondary leading-relaxed max-w-xl"
             >
-              Transforming NASA Earth observation data into immersive musical soundscapes. 
-              Our browser-native pipeline translates satellite telemetry, ocean temperatures, 
-              and atmospheric currents into structured harmonic compositions in real time.
+              NASA-powered visual and scientific data sonification. Transforming verified 
+              NASA Earth observation datasets into immersive musical soundscapes through browser-based 
+              computer vision (OpenCV.js WASM) and calibrated scientific time-series mapping (Tone.js).
             </motion.p>
 
             {/* CTAs */}
@@ -117,11 +117,11 @@ export default function HeroSection() {
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <span className="block font-mono text-[9px] uppercase tracking-widest text-text-muted">
-                  Telemetry Status
+                  NASA Dataset Status
                 </span>
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-biosphere-emerald">
                   <span className="h-1.5 w-1.5 rounded-full bg-biosphere-emerald animate-pulse" />
-                  Calibrated
+                  Verified (1880–2026)
                 </span>
               </div>
             </motion.div>

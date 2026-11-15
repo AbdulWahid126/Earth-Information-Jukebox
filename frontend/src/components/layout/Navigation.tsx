@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,14 +9,13 @@ import { Globe, Menu, X, Radio } from 'lucide-react';
 interface NavItem {
   readonly label: string;
   readonly href: string;
-  readonly code: string;
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
-  { label: 'Home', href: '/', code: 'NAV-01' },
-  { label: 'Explore Earth', href: '/explore', code: 'NAV-02' },
-  { label: 'Studio', href: '/studio', code: 'NAV-03' },
-  { label: 'About', href: '/about', code: 'NAV-04' },
+  { label: 'Home', href: '/' },
+  { label: 'Explore', href: '/explore' },
+  { label: 'Studio', href: '/studio' },
+  { label: 'About', href: '/about' },
 ] as const;
 
 export default function Navigation() {
@@ -30,6 +29,17 @@ export default function Navigation() {
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false);
   }, []);
+
+  // Keyboard accessibility: close mobile navigation on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        closeMobileMenu();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen, closeMobileMenu]);
 
   return (
     <nav
@@ -66,16 +76,13 @@ export default function Navigation() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`group relative flex items-center gap-2 rounded-sm px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider transition-all ${
+                  className={`group relative flex items-center rounded-sm px-4 py-1.5 font-mono text-xs uppercase tracking-wider transition-all focus:outline-hidden focus-visible:ring-2 focus-visible:ring-nasa-cyan ${
                     isActive
-                      ? 'text-nasa-cyan bg-nasa-cyan/10 border border-hairline-accent'
+                      ? 'text-nasa-cyan bg-nasa-cyan/10 border border-hairline-accent font-semibold'
                       : 'text-text-secondary hover:text-text-primary hover:bg-chassis-panel/60 border border-transparent'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <span className={`text-[9px] transition-colors ${isActive ? 'text-nasa-cyan' : 'text-text-muted group-hover:text-text-secondary'}`}>
-                    {item.code}
-                  </span>
                   <span>{item.label}</span>
                   {isActive && (
                     <motion.span
@@ -151,17 +158,14 @@ export default function Navigation() {
                       <Link
                         href={item.href}
                         onClick={closeMobileMenu}
-                        className={`flex items-center justify-between rounded-sm px-3.5 py-2.5 font-mono text-xs uppercase tracking-wider transition-colors ${
+                        className={`flex items-center justify-between rounded-sm px-4 py-2.5 font-mono text-xs uppercase tracking-wider transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-nasa-cyan ${
                           isActive
-                            ? 'text-nasa-cyan bg-nasa-cyan/10 border border-hairline-accent'
+                            ? 'text-nasa-cyan bg-nasa-cyan/10 border border-hairline-accent font-semibold'
                             : 'text-text-secondary hover:text-text-primary hover:bg-chassis-panel'
                         }`}
                         aria-current={isActive ? 'page' : undefined}
                       >
-                        <span className="flex items-center gap-2">
-                          <span className="text-[10px] text-text-muted">{item.code}</span>
-                          <span>{item.label}</span>
-                        </span>
+                        <span>{item.label}</span>
                         {isActive && (
                           <span className="h-1.5 w-1.5 rounded-full bg-nasa-cyan shadow-[0_0_6px_#00E5FF]" />
                         )}

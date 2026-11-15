@@ -70,7 +70,7 @@ export default function SonificationMappingExplainer() {
                 <span>1. Luminance → Musical Pitch</span>
               </div>
               <p className="text-[11px] text-text-secondary leading-normal">
-                Regional brightness $Y = 0.299R + 0.587G + 0.114B \in [0, 1]$ maps monotonically across the active 
+                Regional brightness (Y = 0.299R + 0.587G + 0.114B in [0, 1]) maps monotonically across the active 
                 musical scale. Darker oceanic sectors trigger deeper lower-octave frequencies (e.g. C3–G3), 
                 while bright white/yellowish neutral-anomaly zones ascend into higher registers (e.g. C5–A5).
               </p>
@@ -80,11 +80,11 @@ export default function SonificationMappingExplainer() {
             <div className="rounded-xs border border-hairline bg-chassis-panel p-3.5 space-y-2">
               <div className="flex items-center gap-2 text-telemetry-amber font-bold uppercase text-[11px]">
                 <Sliders className="h-3.5 w-3.5" />
-                <span>2. Variance → Timbre & Filter</span>
+                <span>2. Variance → Timbre &amp; Filter</span>
               </div>
               <p className="text-[11px] text-text-secondary leading-normal">
                 Standard deviation of pixel intensities within each grid cell controls the low-pass filter cutoff frequency (500 Hz to 3500 Hz). 
-                Uniform, quiet ocean regions sound warm and muted; turbulent boundary zones open up the filter with rich harmonic sparkle.
+                Uniform, homogenous map regions sound warm and muted; high-variance boundary zones open up the filter with rich harmonic brightness.
               </p>
             </div>
 
@@ -95,8 +95,8 @@ export default function SonificationMappingExplainer() {
                 <span>3. Longitude → Stereo Field</span>
               </div>
               <p className="text-[11px] text-text-secondary leading-normal">
-                The horizontal coordinate of the scanned cell ($x \in [0, 1]$) pans audio smoothly across the stereo spectrum 
-                from $-85\%$ left to $+85\%$ right, providing spatial acoustic orientation across the Western and Eastern hemispheres.
+                The horizontal coordinate of the scanned cell (x in [0, 1]) pans audio smoothly across the stereo spectrum 
+                from -85% left to +85% right, providing spatial acoustic orientation across the Western and Eastern hemispheres.
               </p>
             </div>
 
@@ -104,11 +104,11 @@ export default function SonificationMappingExplainer() {
             <div className="rounded-xs border border-hairline bg-chassis-panel p-3.5 space-y-2">
               <div className="flex items-center gap-2 text-cyan-400 font-bold uppercase text-[11px]">
                 <Wind className="h-3.5 w-3.5" />
-                <span>4. Sobel Edges → Atmosphere</span>
+                <span>4. Sobel Edges → Texture Layer</span>
               </div>
               <p className="text-[11px] text-text-secondary leading-normal">
-                Sobel gradient magnitude detects coastlines, thermal fronts, and steep anomaly gradients. Sectors with edge densities 
-                greater than $0.15$ trigger subtle, band-pass-filtered pink noise bursts evoking atmospheric wind and planetary friction.
+                Sobel gradient magnitude detects coastlines, colormap boundaries, and visual transitions. Sectors with edge densities 
+                greater than 0.15 trigger subtle, band-pass-filtered pink noise bursts representing regional visual contrast complexity.
               </p>
             </div>
 

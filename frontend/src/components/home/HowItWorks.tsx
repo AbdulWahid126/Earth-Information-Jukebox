@@ -100,11 +100,11 @@ export default function HowItWorks() {
           <ArchitectureNode
             step="PIPELINE STAGE 01"
             title="NASA Earth Data"
-            techBadge="Static Ingestion"
+            techBadge="Static / Upload"
             icon={<Database className="h-4 w-4 text-nasa-cyan" />}
-            inputLabel="MODIS / VIIRS satellite imagery & documented legend metadata"
-            processLabel="Buffer download, canvas off-screen rendering, max 512px downsampling"
-            outputLabel="Normalized RGBA pixel matrix"
+            inputLabel="NASA GISTEMP v4 anomaly maps, monthly CSV, or custom user images"
+            processLabel="In-memory buffering, off-screen canvas downsampling to 512px"
+            outputLabel="Normalized pixel buffer or parsed annual CSV"
             index={0}
           />
 
@@ -124,9 +124,9 @@ export default function HowItWorks() {
             title="Sonification Matrix"
             techBadge="Pure TypeScript"
             icon={<Sliders className="h-4 w-4 text-biosphere-emerald" />}
-            inputLabel="Normalized [0.0, 1.0] visual feature vectors & NASA legend LUT"
-            processLabel="Musical scale quantization, filter cutoff scaling, stereo panning"
-            outputLabel="SonificationFrameParameters"
+            inputLabel="Normalized visual feature vectors or empirical Celsius anomalies"
+            processLabel="Scale quantization, low-pass filter cutoff, frequency ratio mapping"
+            outputLabel="Calibrated SonificationEvent sequence"
             index={2}
           />
 

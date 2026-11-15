@@ -2,12 +2,14 @@
 
 /**
  * Image Analysis & Sonification Panel Component
- * Earth Information Jukebox — Phases 4 & 5
+ * Earth Information Jukebox — Phases 4 & 5 + Final MVP Completion
  *
  * Integrates browser-based OpenCV.js feature extraction with Tone.js harmonic audio sonification.
+ * Supports both official NASA curated datasets (GISTEMP 2025 Map) and user-uploaded custom images
+ * with drag-and-drop, client-side validation, 16×16 grid overlay, and real-time audio playback.
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DatasetMetadata } from '@/types/dataset';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useSonificationEngine } from '@/hooks/useSonificationEngine';
@@ -15,6 +17,7 @@ import GridOverlayVisualizer from './GridOverlayVisualizer';
 import SonificationControlBar from '@/components/sonification/SonificationControlBar';
 import SonificationMappingExplainer from '@/components/sonification/SonificationMappingExplainer';
 import NonAudioFeatureSummary from '@/components/sonification/NonAudioFeatureSummary';
+import ImageUploadZone, { UploadedImageInfo } from '@/components/studio/ImageUploadZone';
 import { 
   Cpu, 
   Play, 
@@ -22,15 +25,28 @@ import {
   AlertTriangle, 
   Scan,
   Compass,
-  Radio
+  Radio,
+  UploadCloud,
+  FileImage,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
+export type ImageSourceMode = 'nasa_preset' | 'custom_upload';
+
 interface ImageAnalysisPanelProps {
-  readonly dataset: DatasetMetadata;
+  readonly dataset?: DatasetMetadata;
+  readonly defaultSourceMode?: ImageSourceMode;
 }
 
-export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps) {
+export default function ImageAnalysisPanel({ 
+  dataset, 
+  defaultSourceMode = 'nasa_preset' 
+}: ImageAnalysisPanelProps) {
+  const [sourceMode, setSourceMode] = useState<ImageSourceMode>(defaultSourceMode);
   const [gridSize, setGridSize] = useState<number>(16);
+  const [customImage, setCustomImage] = useState<UploadedImageInfo | null>(null);
+
   const {
     status,
     isProcessing,
@@ -61,13 +77,35 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
     toggleVoice: toggleSonificationVoice,
   } = useSonificationEngine(result);
 
+  // Clean up custom image object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (customImage?.objectUrl) {
+        try {
+          URL.revokeObjectURL(customImage.objectUrl);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [customImage]);
+
   const handleStartAnalysis = () => {
     stopSonification();
-    void analyze(dataset.imageAssetPath, dataset.id, {
-      columns: gridSize,
-      rows: gridSize,
-      maxProcessingWidth: 512,
-    });
+    
+    if (sourceMode === 'nasa_preset' && dataset) {
+      void analyze(dataset.imageAssetPath, dataset.id, {
+        columns: gridSize,
+        rows: gridSize,
+        maxProcessingWidth: 512,
+      });
+    } else if (sourceMode === 'custom_upload' && customImage) {
+      void analyze(customImage.objectUrl, `custom-${customImage.fileName}`, {
+        columns: gridSize,
+        rows: gridSize,
+        maxProcessingWidth: 512,
+      });
+    }
   };
 
   const handleReset = () => {
@@ -75,12 +113,40 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
     reset();
   };
 
-  // When sonifying, the inspector reflects the active playback sector; otherwise user-selected sector
+  const handleSwitchSourceMode = (newMode: ImageSourceMode) => {
+    if (newMode === sourceMode) return;
+    stopSonification();
+    reset();
+    setSourceMode(newMode);
+  };
+
+  const handleCustomImageSelected = useCallback((info: UploadedImageInfo) => {
+    stopSonification();
+    reset();
+    setCustomImage(info);
+  }, [stopSonification, reset]);
+
+  const handleCustomImageCleared = useCallback(() => {
+    stopSonification();
+    reset();
+    setCustomImage(null);
+  }, [stopSonification, reset]);
+
+  // When sonifying, inspector reflects active playback sector; otherwise user-selected sector
   const activeInspectorSector = currentEvent?.visualFeatures ?? selectedSector;
+
+  const canAnalyze = sourceMode === 'nasa_preset' 
+    ? Boolean(dataset?.imageAssetPath)
+    : Boolean(customImage?.objectUrl);
+
+  const activeImageTitle = sourceMode === 'nasa_preset'
+    ? (dataset?.title || 'NASA Visualization')
+    : (customImage?.fileName || 'Custom Earth Image');
 
   return (
     <div className="rounded-sm border border-hairline bg-chassis-base p-6 font-mono text-xs space-y-6">
-      {/* Panel Header */}
+      
+      {/* Panel Top Header & Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-4">
         <div>
           <div className="flex items-center gap-2 text-nasa-cyan mb-1">
@@ -90,40 +156,108 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
             </span>
           </div>
           <p className="text-[11px] text-text-muted">
-            Segment NASA map with OpenCV.js WASM and synthesize real-time harmonic soundscapes using Tone.js.
+            Segment planetary maps with OpenCV.js WASM and synthesize real-time harmonic soundscapes using Tone.js.
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-chassis-panel p-1 rounded-xs border border-hairline text-[10px]">
-            <span className="text-text-muted px-1.5 uppercase">Grid:</span>
+        {/* Image Source Mode Switcher */}
+        <div className="flex items-center gap-1.5 bg-chassis-panel p-1 rounded-xs border border-hairline self-start sm:self-center">
+          <button
+            type="button"
+            onClick={() => handleSwitchSourceMode('nasa_preset')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xs uppercase tracking-wider transition-colors text-[10px] ${
+              sourceMode === 'nasa_preset'
+                ? 'bg-nasa-cyan text-space-black font-bold shadow-[0_0_10px_rgba(0,229,255,0.3)]'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Layers className="h-3 w-3" />
+            <span>NASA Preset</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchSourceMode('custom_upload')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xs uppercase tracking-wider transition-colors text-[10px] ${
+              sourceMode === 'custom_upload'
+                ? 'bg-nasa-cyan text-space-black font-bold shadow-[0_0_10px_rgba(0,229,255,0.3)]'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <UploadCloud className="h-3 w-3" />
+            <span>Upload Image</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mode-Specific Source Ingestion Bay */}
+      {sourceMode === 'custom_upload' ? (
+        <ImageUploadZone
+          currentImage={customImage}
+          onImageSelected={handleCustomImageSelected}
+          onImageCleared={handleCustomImageCleared}
+          disabled={isProcessing}
+        />
+      ) : dataset ? (
+        /* NASA Preset Dataset Confirmation Banner */
+        <div className="rounded-sm border border-hairline bg-chassis-panel/70 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px]">
+          <div className="flex items-center gap-2.5">
+            <div className="h-2 w-2 rounded-full bg-biosphere-emerald animate-pulse" />
+            <div>
+              <span className="text-text-muted uppercase text-[9px] block">Active Preset Visualization</span>
+              <strong className="text-text-primary font-bold uppercase">{dataset.title} ({dataset.year})</strong>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-text-muted">
+            <span>Projection: <strong className="text-text-secondary">{dataset.mapProjection}</strong></span>
+            <span>•</span>
+            <span>Colormap: <strong className="text-text-secondary">{dataset.colormapName}</strong></span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Grid Configuration & Execution Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-chassis-panel/50 p-3 rounded-xs border border-hairline">
+        <div className="flex items-center gap-2">
+          <span className="text-text-muted uppercase text-[10px] font-bold">Analysis Grid Resolution:</span>
+          <div className="flex items-center gap-1">
             {([8, 16, 32] as const).map((size) => (
               <button
                 key={size}
                 type="button"
                 disabled={isProcessing || playbackStatus === 'playing'}
-                onClick={() => setGridSize(size)}
-                className={`px-2 py-0.5 rounded-xs uppercase tracking-wider transition-colors ${
+                onClick={() => {
+                  setGridSize(size);
+                  if (result) {
+                    handleReset();
+                  }
+                }}
+                className={`px-2.5 py-0.5 rounded-xs uppercase tracking-wider text-[10px] transition-colors ${
                   gridSize === size
                     ? 'bg-nasa-cyan text-space-black font-bold'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
+                    : 'text-text-secondary hover:text-text-primary bg-chassis-base border border-hairline'
+                } disabled:opacity-50`}
               >
                 {size}×{size}
               </button>
             ))}
           </div>
+          <span className="text-text-muted text-[10px] hidden sm:inline-block">
+            ({gridSize * gridSize} spatial analysis sectors)
+          </span>
+        </div>
 
+        {/* Analyze / Re-Analyze Trigger */}
+        <div className="flex items-center gap-2">
           {!result ? (
             <button
               type="button"
-              disabled={isProcessing}
+              disabled={isProcessing || !canAnalyze}
               onClick={handleStartAnalysis}
-              className="inline-flex items-center gap-2 rounded-xs bg-nasa-cyan px-4 py-2 font-bold uppercase tracking-wider text-space-black hover:bg-cyan-300 transition-colors shadow-[0_0_15px_rgba(0,229,255,0.3)] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xs bg-nasa-cyan px-4 py-2 font-bold uppercase tracking-wider text-space-black hover:bg-cyan-300 transition-colors shadow-[0_0_15px_rgba(0,229,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
-              <span>{isProcessing ? 'Processing...' : 'Analyze Image'}</span>
+              <span>{isProcessing ? 'Processing WASM...' : 'Analyze Image'}</span>
             </button>
           ) : (
             <button
@@ -133,10 +267,10 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
                 handleReset();
                 handleStartAnalysis();
               }}
-              className="inline-flex items-center gap-1.5 rounded-xs border border-hairline-accent bg-chassis-panel px-3 py-1.5 text-text-secondary hover:text-nasa-cyan hover:border-nasa-cyan transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xs border border-hairline-accent bg-chassis-panel px-3.5 py-1.5 text-text-secondary hover:text-nasa-cyan hover:border-nasa-cyan transition-colors"
             >
               <RotateCcw className="h-3 w-3" />
-              <span>Re-Analyze</span>
+              <span>Re-Analyze Grid</span>
             </button>
           )}
         </div>
@@ -170,17 +304,25 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
         </div>
       )}
 
-      {/* Initial Idle State Callout */}
+      {/* Initial Idle State Callout (When not yet analyzed) */}
       {!result && !isProcessing && !error && (
         <div className="rounded-sm border border-hairline bg-chassis-panel/40 p-8 text-center space-y-3">
           <Scan className="h-8 w-8 text-text-muted mx-auto" />
           <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider">
-            Image Analysis & Sonification Pipeline Inactive
+            {sourceMode === 'custom_upload' && !customImage
+              ? 'Upload an Image to Begin Analysis'
+              : 'Image Analysis & Sonification Pipeline Inactive'}
           </h4>
           <p className="text-xs text-text-secondary max-w-lg mx-auto leading-relaxed">
-            Click <strong>&quot;Analyze Image&quot;</strong> to lazily initialize OpenCV.js WebAssembly, downscale the 
-            1080p NASA GISTEMP map, and extract regional visual features across a {gridSize}×{gridSize} grid. 
-            Sonification controls unlock immediately after analysis completes.
+            {sourceMode === 'custom_upload' && !customImage ? (
+              'Drag and drop a PNG, JPG, or WEBP image above to load it into the local memory buffer. No data is sent to external servers.'
+            ) : (
+              <>
+                Click <strong>&quot;Analyze Image&quot;</strong> to initialize OpenCV.js WebAssembly, downscale{' '}
+                <strong>{activeImageTitle}</strong> to 512px, and extract regional visual features across a {gridSize}×{gridSize} grid.
+                Sonification controls unlock immediately after analysis completes.
+              </>
+            )}
           </p>
 
           <div className="pt-2">
@@ -204,8 +346,8 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <div className="leading-normal">
               <strong>Scientific Notice: </strong>
-              Extracted metrics represent <em>visual colormap features</em> (Crameri &quot;vik&quot; palette). They are not calibrated physical temperature values. 
-              White background canvas regions outside the Robinson projection oval are automatically silenced during sonification.
+              Extracted metrics represent <em>visual colormap features</em> (luminance, color variance, and edge gradients). 
+              They are not calibrated in-situ physical measurements. White or transparent border canvas regions outside the planet are automatically silenced during sonification.
             </div>
           </div>
 
@@ -217,7 +359,7 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
             onSelectSector={setSelectedSector}
           />
 
-          {/* Sonification Playback Station (Phase 5) */}
+          {/* Sonification Playback Station */}
           <SonificationControlBar
             playbackStatus={playbackStatus}
             currentEvent={currentEvent}
@@ -260,7 +402,7 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
             <div className="rounded-xs border border-hairline bg-chassis-panel p-3">
               <span className="text-text-muted text-[9px] uppercase tracking-wider block mb-1">Grid Sectors</span>
               <span className="text-nasa-cyan font-bold">{result.globalStatistics.totalSectors} Total</span>
-              <span className="text-text-muted text-[8px] block mt-0.5">({result.globalStatistics.activeDataSectors} planetary cells)</span>
+              <span className="text-text-muted text-[8px] block mt-0.5">({result.globalStatistics.activeDataSectors} active cells)</span>
             </div>
 
             <div className="rounded-xs border border-hairline bg-chassis-panel p-3">
@@ -289,7 +431,7 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
                     ? 'bg-text-muted/20 text-text-muted border border-hairline' 
                     : 'bg-biosphere-emerald/10 text-biosphere-emerald border border-biosphere-emerald/30'
                 }`}>
-                  {activeInspectorSector.isLikelyBackground ? 'Canvas Margin (Rest)' : 'Active Earth Observation Data'}
+                  {activeInspectorSector.isLikelyBackground ? 'Canvas Margin (Rest)' : 'Active Data Sector'}
                 </span>
               </div>
 
@@ -340,7 +482,7 @@ export default function ImageAnalysisPanel({ dataset }: ImageAnalysisPanelProps)
               <div className="pt-2 border-t border-hairline/60 flex flex-wrap justify-between text-[10px] text-text-muted">
                 <span>Normalized Center: ({activeInspectorSector.coordinates.normalizedX}, {activeInspectorSector.coordinates.normalizedY})</span>
                 <span>Buffer Pixels: {activeInspectorSector.pixelCount} px ({activeInspectorSector.coordinates.processingWidth}×{activeInspectorSector.coordinates.processingHeight})</span>
-                <span>Original Map Coordinates: ({activeInspectorSector.coordinates.originalX}, {activeInspectorSector.coordinates.originalY})</span>
+                <span>Coordinates: ({activeInspectorSector.coordinates.originalX}, {activeInspectorSector.coordinates.originalY})</span>
               </div>
             </div>
           )}

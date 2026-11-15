@@ -15,6 +15,7 @@ interface ExperienceCardProps {
   readonly acousticMapping: string;
   readonly icon: React.ReactNode;
   readonly accentBorder: string;
+  readonly status: 'Operational' | 'Planned';
   readonly index: number;
 }
 
@@ -28,8 +29,11 @@ function ExperienceCard({
   acousticMapping,
   icon,
   accentBorder,
+  status,
   index,
 }: ExperienceCardProps) {
+  const isOperational = status === 'Operational';
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 30 }}
@@ -44,7 +48,9 @@ function ExperienceCard({
           src={imageSrc}
           alt={imageAlt}
           fill
-          className="object-cover object-center transition-transform duration-700 group-hover:scale-105 opacity-85 group-hover:opacity-100"
+          className={`object-cover object-center transition-transform duration-700 group-hover:scale-105 ${
+            isOperational ? 'opacity-90 group-hover:opacity-100' : 'opacity-65 grayscale-[20%]'
+          }`}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
         />
 
@@ -98,17 +104,17 @@ function ExperienceCard({
         {/* Status & Action Footer */}
         <div className="mt-4 pt-3.5 border-t border-hairline flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-telemetry-amber animate-pulse" />
-            <span className="font-mono text-[9px] font-semibold tracking-wider text-telemetry-amber uppercase">
-              Preview // Phase 3 Pending
+            <span className={`h-1.5 w-1.5 rounded-full ${isOperational ? 'bg-biosphere-emerald animate-pulse' : 'bg-telemetry-amber'}`} />
+            <span className={`font-mono text-[9px] font-semibold tracking-wider uppercase ${isOperational ? 'text-biosphere-emerald' : 'text-telemetry-amber'}`}>
+              {isOperational ? 'Operational MVP Dataset' : 'Planned // Future Expansion'}
             </span>
           </div>
 
           <Link
-            href="/explore"
+            href={isOperational ? "/studio" : "/explore"}
             className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-text-secondary hover:text-nasa-cyan transition-colors"
           >
-            <span>Details</span>
+            <span>{isOperational ? 'Launch in Studio' : 'Details'}</span>
             <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
@@ -156,13 +162,14 @@ export default function FeaturedExperiences() {
           <ExperienceCard
             title="Global Temperature Anomalies"
             category="Atmosphere // Thermal"
-            sensor="NASA AIRS / Aqua"
+            sensor="NASA GISTEMP v4 / GHCNv4"
             imageSrc="/assets/visualizations/temperature-anomaly.jpg"
-            imageAlt="NASA AIRS satellite infrared temperature anomaly map showing global heat distributions"
-            description="Infrared soundings reveal global thermal variances. High surface and tropospheric temperatures translate to upper harmonic registers, while polar cooling grounds deep ambient drone anchors."
-            acousticMapping="Brightness & Temp Delta -> Pentatonic Scale Pitch + High-Pass Filter Cutoff"
+            imageAlt="NASA GISTEMP global temperature anomaly map showing regional temperature deviations"
+            description="147-year empirical climate anomaly series and 2025 spatial composite. Surface and ocean temperature anomalies map to calibrated pitches in time-series mode and regional visual features in spatial mode."
+            acousticMapping="Empirical Anomaly Delta -> Musical Pitch (200Hz Baseline) + Stereo Panning"
             icon={<Thermometer className="h-3.5 w-3.5 text-alert-crimson" />}
             accentBorder="bg-alert-crimson"
+            status="Operational"
             index={0}
           />
 
@@ -172,10 +179,11 @@ export default function FeaturedExperiences() {
             sensor="Sentinel-6 / Jason-3"
             imageSrc="/assets/visualizations/sea-level.jpg"
             imageAlt="NASA radar altimetry map illustrating global sea surface height anomalies"
-            description="Precision radar altimetry records ocean surface height variations and polar ice displacement, translated into undulating sub-bass frequencies and slow stereo spatialization swells."
-            acousticMapping="Sea Surface Height Anomaly -> Sub-Bass Oscillator (35-110 Hz) + Panning"
+            description="Precision radar altimetry records ocean surface height variations and polar ice displacement. Scheduled for integration in a future release."
+            acousticMapping="Planned: Sea Surface Height Anomaly -> Sub-Bass Oscillator (35-110 Hz) + Panning"
             icon={<Waves className="h-3.5 w-3.5 text-nasa-cyan" />}
             accentBorder="bg-nasa-cyan"
+            status="Planned"
             index={1}
           />
 
@@ -185,10 +193,11 @@ export default function FeaturedExperiences() {
             sensor="ECCO2 / NASA JPL"
             imageSrc="/assets/visualizations/ocean-currents.jpg"
             imageAlt="NASA Perpetual Ocean visualization depicting swirling global ocean surface currents and eddies"
-            description="High-resolution ocean circulation models trace global pathways like the Gulf Stream. Kinetic flow vectors and turbulent vortices drive arpeggiated melodic cadences in sync with the transport clock."
-            acousticMapping="Current Velocity & Vorticity -> Arpeggiation Clock Subdivisions + Mod Resonance"
+            description="High-resolution ocean circulation simulation tracing surface flow and boundary currents. Scheduled for integration in a future release."
+            acousticMapping="Planned: Current Velocity & Vorticity -> Arpeggiation Clock Subdivisions"
             icon={<Navigation className="h-3.5 w-3.5 text-telemetry-amber" />}
             accentBorder="bg-telemetry-amber"
+            status="Planned"
             index={2}
           />
         </div>
@@ -196,10 +205,10 @@ export default function FeaturedExperiences() {
         {/* Authentic Attribution Disclaimer */}
         <div className="mt-8 rounded-sm border border-hairline bg-chassis-panel/50 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-text-muted font-mono text-[10px]">
           <span>
-            DATA ORIGIN: NASA Jet Propulsion Laboratory (JPL) & Goddard Space Flight Center (GSFC) Public Domain Archives.
+            DATA ORIGIN: NASA Goddard Institute for Space Studies (GISS) &amp; Scientific Visualization Studio (SVS #5603).
           </span>
           <span className="text-text-secondary">
-            Calibration curves and live sonification models will be bound during Phase 3.
+            STATUS: NASA GISTEMP v4 is fully operational. Additional datasets scheduled for future development.
           </span>
         </div>
 

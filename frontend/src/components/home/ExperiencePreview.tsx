@@ -85,15 +85,15 @@ export default function ExperiencePreview() {
             <div className="p-5 flex-1 flex flex-col justify-between">
               <div>
                 <h3 className="text-lg font-bold text-text-primary tracking-tight mb-2">
-                  1. Observe Satellite Telemetry
+                  1. Ingest NASA Earth Visualizations
                 </h3>
                 <p className="text-sm text-text-secondary leading-relaxed">
-                  Ingest verified NASA satellite composites with documented scientific calibration legends and physical measurement ranges.
+                  Ingest verified NASA scientific visualizations (such as the SVS #5603 Robinson projection map) or upload your own satellite photography and climate colormaps.
                 </p>
               </div>
 
               <div className="mt-4 pt-3 border-t border-hairline font-mono text-[9px] text-text-muted">
-                INPUT: 2D Spatial Radiometric Imagery (.webp / .png)
+                INPUT: 2D Spatial Earth Visualizations (PNG / JPG / WEBP)
               </div>
             </div>
           </motion.div>
@@ -168,15 +168,15 @@ export default function ExperiencePreview() {
             <div className="p-5 flex-1 flex flex-col justify-between">
               <div>
                 <h3 className="text-lg font-bold text-text-primary tracking-tight mb-2">
-                  2. Computer Vision Analysis
+                  2. Computer Vision Feature Extraction
                 </h3>
                 <p className="text-sm text-text-secondary leading-relaxed">
-                  Browser-based OpenCV.js segments the visualization into regional sectors, calculating brightness, dominant hue, and edge boundary density.
+                  Browser-based OpenCV.js segments the visualization into a 16×16 sector grid, extracting relative luminance, HSV hue, and Sobel edge density. Visual features reflect colormap geometry, not direct sensor heat.
                 </p>
               </div>
 
               <div className="mt-4 pt-3 border-t border-hairline font-mono text-[9px] text-text-muted">
-                PROCESS: Controlled Regional Aggregation &amp; Smoothing
+                PROCESS: WebAssembly Pixel Segmentation &amp; Mathematical Feature Extraction
               </div>
             </div>
           </motion.div>

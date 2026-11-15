@@ -53,9 +53,9 @@ export default function ExplorerCatalog() {
         <div className="flex items-center gap-3 text-text-muted text-[10px]">
           <span>CATALOG: {filteredDatasets.length} DATASETS</span>
           <span>•</span>
-          <span className="text-biosphere-emerald">1 INTEGRATED</span>
+          <span className="text-biosphere-emerald">1 OPERATIONAL MVP</span>
           <span>•</span>
-          <span>2 PENDING</span>
+          <span>2 PLANNED</span>
         </div>
       </div>
 

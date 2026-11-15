@@ -79,7 +79,7 @@ export default function DatasetCard({ dataset, isSelected, onSelect }: DatasetCa
               <ArrowRight className="h-3 w-3" />
             </span>
           ) : (
-            <span className="text-text-muted italic">Phase 3 Expansion</span>
+            <span className="text-text-muted italic">Planned // Coming Soon</span>
           )}
         </div>
       </div>

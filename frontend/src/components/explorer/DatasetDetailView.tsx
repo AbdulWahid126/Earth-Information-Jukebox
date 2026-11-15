@@ -46,7 +46,7 @@ export default function DatasetDetailView({ dataset }: DatasetDetailViewProps) {
         <div className="flex items-center gap-3">
           <span className="text-text-muted uppercase">YEAR: {dataset.year}</span>
           <span className="rounded-xs border border-hairline-accent bg-nasa-cyan/5 px-2 py-0.5 text-nasa-cyan font-bold uppercase">
-            STATUS: CV & SONIFICATION OPERATIONAL (PHASES 4 & 5)
+            STATUS: CV &amp; SONIFICATION OPERATIONAL
           </span>
         </div>
       </div>

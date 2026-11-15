@@ -3,7 +3,7 @@ import { Globe, ExternalLink, Radio } from 'lucide-react';
 
 const FOOTER_NAV = [
   { label: 'Home', href: '/' },
-  { label: 'Explore Earth', href: '/explore' },
+  { label: 'Explore', href: '/explore' },
   { label: 'Studio', href: '/studio' },
   { label: 'About', href: '/about' },
 ] as const;
