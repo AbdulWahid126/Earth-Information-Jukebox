@@ -24,15 +24,9 @@ import {
   Activity, 
   Compass, 
   Info,
-  CheckCircle2,
   ExternalLink,
   Calendar,
   Scan,
-  UploadCloud,
-  HelpCircle,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
   Lock
 } from 'lucide-react';
 
@@ -41,7 +35,6 @@ export type StudioSonificationModality = 'scientific_timeseries' | 'spatial_visu
 export default function StudioWorkstation() {
   const [activeModality, setActiveModality] = useState<StudioSonificationModality>('scientific_timeseries');
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('gistemp-temperature');
-  const [showPresentationGuide, setShowPresentationGuide] = useState<boolean>(true);
 
   const selectedDataset = NASA_DATASETS.find((d) => d.id === selectedDatasetId) || NASA_DATASETS[0];
   const isSelectedDatasetAvailable = selectedDataset.availability === 'available';
@@ -65,17 +58,8 @@ export default function StudioWorkstation() {
           </p>
         </div>
 
-        {/* Telemetry Hardware Badges & Guide Toggle */}
+        {/* Telemetry Hardware Badges */}
         <div className="flex flex-wrap items-center gap-2 text-[10px]">
-          <button
-            type="button"
-            onClick={() => setShowPresentationGuide(!showPresentationGuide)}
-            className="rounded-xs border border-nasa-cyan/40 bg-nasa-cyan/10 px-2.5 py-1 text-nasa-cyan font-bold uppercase hover:bg-nasa-cyan/20 transition-colors flex items-center gap-1.5"
-          >
-            <HelpCircle className="h-3 w-3" />
-            <span>{showPresentationGuide ? 'Hide Demo Guide' : 'Judge Demo Guide'}</span>
-            {showPresentationGuide ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </button>
           <span className="rounded-xs border border-biosphere-emerald/40 bg-biosphere-emerald/10 px-2.5 py-1 text-biosphere-emerald font-bold uppercase">
             Tone.js Audio Engine
           </span>
@@ -87,69 +71,6 @@ export default function StudioWorkstation() {
           </span>
         </div>
       </div>
-
-      {/* Presentation Readiness: Quick 10-Minute Walkthrough for Evaluators */}
-      {showPresentationGuide && (
-        <div className="rounded-sm border border-nasa-cyan/30 bg-chassis-base/95 p-5 space-y-4 shadow-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-hairline pb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-nasa-cyan" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                10-Minute Hackathon Presentation Guide &amp; System Walkthrough
-              </h2>
-            </div>
-            <span className="text-[10px] text-nasa-cyan font-semibold uppercase">
-              Evaluator Quick Reference
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[11px]">
-            <div className="rounded-xs border border-hairline bg-chassis-panel p-3 space-y-1.5">
-              <div className="font-bold text-nasa-cyan uppercase flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>1. Time-Series Mode (Scientific)</span>
-              </div>
-              <p className="text-text-secondary leading-normal">
-                Sonify <strong>147 years of empirical NASA GISTEMP v4</strong> data (1880–2026). Direct Celsius anomalies relative to the 1951–1980 baseline map to precise musical frequencies (200 Hz baseline).
-              </p>
-            </div>
-
-            <div className="rounded-xs border border-hairline bg-chassis-panel p-3 space-y-1.5">
-              <div className="font-bold text-telemetry-amber uppercase flex items-center gap-1.5">
-                <Scan className="h-3.5 w-3.5" />
-                <span>2. Spatial Visual Mode (OpenCV.js)</span>
-              </div>
-              <p className="text-text-secondary leading-normal">
-                OpenCV.js WASM decomposes maps into a <strong>16×16 sector matrix</strong>. Extracted luminance, texture variance, and Sobel edge density modulate musical pitch, low-pass timbre, and stereo panning.
-              </p>
-            </div>
-
-            <div className="rounded-xs border border-hairline bg-chassis-panel p-3 space-y-1.5">
-              <div className="font-bold text-biosphere-emerald uppercase flex items-center gap-1.5">
-                <UploadCloud className="h-3.5 w-3.5" />
-                <span>3. Custom Image Upload (Interactive)</span>
-              </div>
-              <p className="text-text-secondary leading-normal">
-                Drag and drop any <strong>PNG, JPG, or WEBP</strong> image (up to 10MB / 4096px). The application validates and processes the image locally in browser memory without sending data to a server.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-xs border border-hairline/80 bg-chassis-panel/60 p-2.5 flex flex-wrap items-center justify-between gap-2 text-[10px] text-text-muted">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-biosphere-emerald" />
-              <span>Recommended demo sequence: <strong>Scientific Time-Series</strong> (listen to global warming trend) → <strong>Spatial Mode</strong> (analyze map or upload custom image).</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowPresentationGuide(false)}
-              className="text-text-secondary hover:text-text-primary underline uppercase text-[9px]"
-            >
-              Dismiss banner
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Primary Modality Switcher */}
       <div className="rounded-sm border border-hairline-accent bg-chassis-base p-2">
